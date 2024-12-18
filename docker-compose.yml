@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  back-end:
+    build:
+      context: ./back_end
+      dockerfile: Dockerfile
+    container_name: back-end
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: mysql-db
+      DB_USER: root
+      DB_PASSWORD: Rikesh@2108
+      DB_NAME: form_validation
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: >
+      bash -c "npm install && npm start"  # Replace this with how you start your backend in Docker
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Rikesh@2108
+      MYSQL_DATABASE: form_validation
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "--host=localhost",
+          "--user=root",
+          "--password=Rikesh@2108",
+        ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - app-network
+
+  front-end:
+    build:
+      context: ./front_end
+      dockerfile: Dockerfile
+    container_name: front-end
+    ports:
+      - "5173:80"
+    depends_on:
+      - back-end
+    networks:
+      - app-network
+    environment:
+      REACT_APP_API_URL: "http://back-end:5000"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
